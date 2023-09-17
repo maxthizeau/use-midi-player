@@ -21,7 +21,7 @@ export default defineConfig({
       fileName: (format) => `use-midi-player.${format}.js`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: ['react', 'react-dom', 'midifile-ts', '@ryohey/wavelet'],
       output: {
         globals: {
           react: 'React',
