@@ -2,9 +2,9 @@
 
 Monorepo for the npm package [@maximethizeau/use-midi-player](https://www.npmjs.com/package/@maximethizeau/use-midi-player).
 
-Documentation is available [here](https://github.com/maxthizeau/use-midi-player/packages/use-midi-player).
+Documentation is available [here](https://github.com/maxthizeau/use-midi-player/tree/master/packages/use-midi-player).
 
-Usage example : [here](https://github.com/maxthizeau/sites/test-use-midi-player).
+Usage example : [here](https://github.com/maxthizeau/use-midi-player/tree/master/sites/test-use-midi-player).
 
 Todo :
 
