@@ -1,10 +1,10 @@
 import React from 'react'
-import { useMidiPlayer } from 'use-midi-player'
+import { useSingleMidiPlayer } from 'use-midi-player'
 
 type Props = unknown
 
 const LoadByHook: React.FC<Props> = () => {
-  const { synth } = useMidiPlayer({
+  const { synth } = useSingleMidiPlayer({
     url: 'Numb.mid',
   })
   return (
