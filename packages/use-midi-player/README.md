@@ -7,7 +7,14 @@ This hook allow you to play midi files in your react app. It use the [midifile-t
 ## Installation
 
 ```bash
+# First, add the peer dependencies
+npm install midifile-ts @ryohey/wavelet
+# And install this library
 npm install @maximethizeau/use-midi-player
+
+# or
+yarn add midifile-ts @ryohey/wavelet
+yarn add @maximethizeau/use-midi-player
 ```
 
 ## Usage

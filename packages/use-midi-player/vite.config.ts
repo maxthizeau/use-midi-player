@@ -26,6 +26,8 @@ export default defineConfig({
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
+          'midifile-ts': 'midifile-ts',
+          '@ryohey/wavelet': '@ryohey/wavelet',
         },
       },
     },
