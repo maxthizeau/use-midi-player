@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { createContext, useCallback, useMemo } from 'react'
 import { MidiSynth } from '../midi-player'
 import { read } from 'midifile-ts'

@@ -18,7 +18,7 @@ export class MidiSynth {
   private soundFontData: ArrayBuffer | null = null
   public progression: number = 0
   private midi: MidiFile | null = null
-
+  private volume: GainNode | null = null
   private onProgress?: (progress: number) => void
   private onEnd?: () => void
   private onTrackChange?: (index: number, track: Track) => void
@@ -94,6 +94,14 @@ export class MidiSynth {
     this.onTrackChange?.(trackNumber, trackUpdated)
   }
 
+  public setVolume = (volume: number) => {
+    this.volume?.gain.setValueAtTime(volume, this.context.currentTime)
+  }
+
+  public getVolume = () => {
+    return this.volume?.gain.value ?? 0
+  }
+
   public get MidiPlayer() {
     return this.midiPlayer
   }
@@ -129,6 +137,8 @@ export class MidiSynth {
       outputChannelCount: [2],
     } as any)
     this.synth.connect(this.context.destination)
+    this.volume = this.context.createGain() // Declare gain node
+    this.volume.connect(this.context.destination)
   }
 
   public muteTrack = (track: number) => {
