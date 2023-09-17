@@ -1,0 +1,11 @@
+{
+  "name": "use-midi-player",
+  "private": true,
+  
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "sites/*"
+    ]
+  }
+}

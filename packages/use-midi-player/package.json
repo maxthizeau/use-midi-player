@@ -1,0 +1,32 @@
+{
+  "name": "@maximethizeau/use-midi-player",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "prepack": "json -f package.json -I -e \"delete this.devDependencies; delete this.dependencies\"",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "license": "UNLICENSED",
+  "peerDependencies": {
+    "@ryohey/wavelet": "^0.6.1",
+    "midifile-ts": "^1.5.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/use-midi-player.umd.js",
+  "module": "./dist/use-midi-player.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/use-midi-player.es.js",
+      "require": "./dist/use-midi-player.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  }
+}
