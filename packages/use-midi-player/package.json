@@ -1,6 +1,6 @@
 {
   "name": "@maximethizeau/use-midi-player",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -28,5 +28,9 @@
       "require": "./dist/use-midi-player.umd.js",
       "types": "./dist/index.d.ts"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maxthizeau/use-midi-player/packages/use-midi-player"
   }
 }
