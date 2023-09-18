@@ -36,27 +36,15 @@ export class MIDIPlayer {
   private scheduler: EventScheduler<AnyEvent & Tick>
   public endOfSong: number
   public tracks = new Set<number>()
-  private addTrack?: (track: number, name: string) => void
-  private updateTrack?: (
-    track: number,
-    name: string | undefined,
-    volume: number
-  ) => void
+  private isPlaying = false
+  private isStarted = false
 
   onProgress?: (progress: number) => void
 
   constructor(
     midi: MidiFile,
     sampleRate: number,
-    output: (e: SynthEvent) => void,
-    cbs: {
-      addTrack?: (track: number, name: string) => void
-      updateTrack?: (
-        track: number,
-        name: string | undefined,
-        volume: number
-      ) => void
-    } = {}
+    output: (e: SynthEvent) => void
   ) {
     this.midi = midi
     this.sampleRate = sampleRate
@@ -73,26 +61,52 @@ export class MIDIPlayer {
     this.endOfSong = Math.max(
       ...this.tickedEvents.filter(isEndOfTrackEvent).map((e) => e.tick)
     )
-    this.addTrack = cbs.addTrack
-    this.updateTrack = cbs.updateTrack
 
     this.resetControllers()
   }
 
+  public get IsStarted() {
+    return this.isStarted
+  }
+
+  public get IsPlaying() {
+    return this.isPlaying
+  }
+
   resume() {
     if (this.interval === undefined) {
+      this.isPlaying = true
+      this.isStarted = true
       this.interval = window.setInterval(() => this.onTimer(), TIMER_INTERVAL)
+    }
+  }
+
+  getSongsDuration() {
+    //  (tick / (timebase / 60) / bpm) * 1000
+    return {
+      // full: this.endOfSong / (this.midi.header.ticksPerBeat / 60),
+      full:
+        (this.endOfSong / (this.midi.header.ticksPerBeat / 60) / this.tempo) *
+        1000,
+      current:
+        (this.scheduler.currentTick /
+          (this.midi.header.ticksPerBeat / 60) /
+          this.tempo) *
+        1000,
+      // this.scheduler.currentTick / (this.midi.header.ticksPerBeat / 60),
     }
   }
 
   pause() {
     clearInterval(this.interval)
     this.interval = undefined
+    this.isPlaying = false
     this.allSoundsOff()
   }
 
   stop() {
     this.pause()
+    this.isStarted = false
     this.resetControllers()
     this.scheduler.seek(0)
     this.onProgress?.(0)
@@ -198,10 +212,6 @@ export class MIDIPlayer {
     // console.log(e)
     switch (e.type) {
       case 'channel':
-        if (e.subtype === 'controller' && e.controllerType === 7) {
-          this.tracks.add(e.track)
-          this.updateTrack?.(e.track, undefined, e.value)
-        }
         return {
           type: 'midi',
           midi: e,
@@ -212,9 +222,6 @@ export class MIDIPlayer {
         switch (e.subtype) {
           case 'setTempo':
             this.tempo = (60 * 1000000) / e.microsecondsPerBeat
-            break
-          case 'trackName':
-            this.addTrack?.(e.track, e.text)
             break
           default:
             // console.warn(`not supported meta event`, e)

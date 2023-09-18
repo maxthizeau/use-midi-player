@@ -11,6 +11,25 @@ export type Track = {
   name?: string
 }
 
+export type PlayerState = {
+  isPlaying: boolean
+  isPaused: boolean
+  isStarted: boolean
+  progression: number
+  duration?: {
+    full: number
+    current: number
+  }
+  volume: {
+    min: number
+    max: number
+    value: number
+  }
+}
+
+const MinVolume = -1
+const MaxVolume = 0
+
 export class MidiSynth {
   private context: AudioContext
   private midiPlayer: MIDIPlayer | null
@@ -21,85 +40,32 @@ export class MidiSynth {
   private volume: GainNode | null = null
   private onProgress?: (progress: number) => void
   private onEnd?: () => void
-  private onTrackChange?: (index: number, track: Track) => void
+  private onChange?: (state: PlayerState) => void
 
-  // private tracks = new Set<number>()
-  private tracks = new Map<
-    number,
-    {
-      name?: string
-      muted: boolean
-      volume: number
-    }
-  >()
+  // private tracks = new Map<
+  //   number,
+  //   {
+  //     name?: string
+  //     muted: boolean
+  //     volume: number
+  //   }
+  // >()
 
   constructor({
     onProgress,
     onEnd,
-    onTrackChange,
+    onChange,
   }: {
     onProgress?: (progress: number) => void
     onEnd?: () => void
-    onTrackChange?: (index: number, track: Track) => void
+    onChange?: (state: PlayerState) => void
   } = {}) {
     this.context = new AudioContext()
     this.midiPlayer = null
     this.synth = null
     this.onProgress = onProgress
     this.onEnd = onEnd
-    this.onTrackChange = onTrackChange
-  }
-
-  public getTrack = (track: number) => {
-    return this.tracks.get(track)
-  }
-
-  public kill = () => {
-    console.log('kill')
-    this.midiPlayer?.stop()
-    this.context.close()
-  }
-
-  private updateTrack = (trackNumber: number, newTrack: Partial<Track>) => {
-    const currentTrack = this.getTrack(trackNumber)
-    if (
-      !currentTrack &&
-      newTrack.volume === undefined &&
-      newTrack.muted === undefined
-    ) {
-      return
-    }
-
-    const updated = {
-      ...currentTrack,
-      ...newTrack,
-    }
-    if (updated.volume === undefined || updated.muted === undefined) {
-      updated.volume = 100
-      updated.muted = false
-    }
-    // if (!currentTrack) {
-    //   return
-    // }
-    this.tracks.set(trackNumber, {
-      volume: updated.volume,
-      muted: updated.muted,
-      name: updated.name ?? currentTrack?.name,
-    })
-
-    const trackUpdated = this.getTrack(trackNumber)
-    if (!trackUpdated) {
-      return
-    }
-    this.onTrackChange?.(trackNumber, trackUpdated)
-  }
-
-  public setVolume = (volume: number) => {
-    this.volume?.gain.setValueAtTime(volume, this.context.currentTime)
-  }
-
-  public getVolume = () => {
-    return this.volume?.gain.value ?? 0
+    this.onChange = onChange
   }
 
   public get MidiPlayer() {
@@ -114,17 +80,6 @@ export class MidiSynth {
     return this.progression
   }
 
-  public get Tracks() {
-    return this.tracks
-  }
-
-  // public setVolume = (number: number) => {
-  //   this.synth?.port.postMessage({
-  //     type: 'volume',
-  //     volume: number,
-  //   })
-  // }
-
   public setup = async () => {
     const url = new URL('@ryohey/wavelet/dist/processor.js', import.meta.url)
     try {
@@ -132,50 +87,26 @@ export class MidiSynth {
     } catch (e) {
       console.error('Failed to add AudioWorklet module', e)
     }
+
     this.synth = new AudioWorkletNode(this.context, 'synth-processor', {
       numberOfInputs: 0,
       outputChannelCount: [2],
     } as any)
-    this.synth.connect(this.context.destination)
-    this.volume = this.context.createGain() // Declare gain node
-    this.volume.connect(this.context.destination)
-  }
 
-  public muteTrack = (track: number) => {
-    const muted = this.tracks.get(track)?.muted
-    if (muted) {
-      this.MidiPlayer?.unmuteTrack(track)
-      this.updateTrack(track, {
-        muted: false,
-        volume: this.tracks.get(track)?.volume ?? 1,
-      })
-      return
-    }
-    this.MidiPlayer?.muteTrack(track)
-    this.updateTrack(track, {
-      muted: true,
-      volume: this.tracks.get(track)?.volume ?? 1,
-    })
+    this.volume = this.context.createGain()
+    this.volume.connect(this.context.destination)
+    this.synth.connect(this.context.destination)
+    this.synth.connect(this.volume)
   }
 
   public unloadMidi = () => {
     this.midiPlayer?.pause()
     this.midiPlayer = null
     this.midi = null
+    this.triggerChange()
   }
 
   postSynthMessage = (e: SynthEvent, transfer?: Transferable[]) => {
-    if (
-      e.type === 'midi' &&
-      e.midi.type === 'channel' &&
-      e.midi.subtype === 'noteOn' &&
-      !this.tracks.has(e.midi.channel)
-    ) {
-      this.updateTrack(e.midi.channel, {
-        muted: false,
-        volume: 1,
-      })
-    }
     this.synth?.port.postMessage(e, transfer ?? [])
   }
 
@@ -212,23 +143,71 @@ export class MidiSynth {
         this.onEnd?.()
       }
     }
-
-    console.log('MIDI loaded', midi)
+    this.triggerChange()
   }
+
+  updateChangeCallback = (onChange: (state: PlayerState) => void) => {
+    this.onChange = onChange
+  }
+
   jump = (percent: number) => {
     this.midiPlayer?.seek(percent)
+    this.triggerChange()
   }
 
   stop = () => {
     this.midiPlayer?.stop()
+    this.triggerChange()
   }
 
   pause = () => {
     this.midiPlayer?.pause()
+    this.triggerChange()
   }
 
   play = () => {
     this.context.resume()
     this.midiPlayer?.resume()
+    this.triggerChange()
+  }
+
+  kill = () => {
+    this.midiPlayer?.stop()
+    this.context.close()
+    this.triggerChange()
+  }
+
+  setVolume = (volume: number) => {
+    if (!this.volume) return
+    if (volume < MinVolume) volume = MinVolume
+    if (volume > MaxVolume) volume = MaxVolume
+
+    this.volume.gain.value = volume
+    this.triggerChange()
+    // this.volume?.gain.setValueAtTime(volume, this.context.currentTime)
+  }
+
+  getVolume = () => {
+    return {
+      min: MinVolume,
+      max: MaxVolume,
+      value: this.volume?.gain.value ?? 0,
+    }
+  }
+
+  private triggerChange = () => {
+    this.onChange?.(this.getPlayerState())
+  }
+
+  getPlayerState = () => {
+    return {
+      isPlaying: this.midiPlayer?.IsPlaying ?? false,
+      isPaused:
+        (this.midiPlayer?.IsStarted && !this.midiPlayer?.IsPlaying) ?? false,
+      isStarted: this.midiPlayer?.IsStarted ?? false,
+      progression: this.progression,
+      duration: this.midiPlayer?.getSongsDuration(),
+      volume: this.getVolume(),
+    }
   }
 }

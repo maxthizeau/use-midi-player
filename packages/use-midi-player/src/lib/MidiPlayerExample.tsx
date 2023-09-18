@@ -12,6 +12,7 @@ const MidiPlayerExample: FC<IProps> = () => {
     const synth = new MidiSynth({
       onProgress: (progress) => {
         console.log('progress : ', progress)
+        console.log(synth.getPlayerState())
       },
     })
     await synth.setup()
@@ -69,6 +70,24 @@ const MidiPlayerExample: FC<IProps> = () => {
           +10%
         </button>
         {}
+      </div>
+      <div>
+        <button
+          id="button-volume-down"
+          onClick={() => {
+            synth.setVolume(synth.getVolume().value - 0.5)
+          }}
+        >
+          Volume Down
+        </button>
+        <button
+          id="button-volume-up"
+          onClick={() => {
+            synth.setVolume(synth.getVolume().value + 0.5)
+          }}
+        >
+          Volume Up
+        </button>
       </div>
     </>
   )

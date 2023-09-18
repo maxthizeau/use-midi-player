@@ -12,3 +12,4 @@ Todo :
 - [ ] Add CI/CD
 - [ ] Add track/channel manager
 - [ ] Add more options to control the player
+- [ ] Add real observable to the context (bypassed with callbacks for now)

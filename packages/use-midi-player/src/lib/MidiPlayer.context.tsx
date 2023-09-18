@@ -19,6 +19,9 @@ const Provider = ({ children }: { children: React.ReactNode }) => {
       onProgress: (progress) => {
         setProgress(progress)
       },
+      onEnd: () => {
+        synth?.stop()
+      },
     })
     await synth.setup()
     await synth.loadSoundFont()
